@@ -749,27 +749,27 @@
       <section id="startScreen" class="screen active">
         <div class="hero">
           <div class="title-block">
-            <div class="eyebrow">RP • Калькулятор баллов</div>
-            <h1>Подсчёт работы без бардака</h1>
+            <div class="eyebrow">Калькулятор баллов | МО Radmir 07</div>
+            <h1>Лёгкий подсчёт баллов</h1>
             <p class="subtitle">
-              Выбери ник и звание, после чего откроется калькулятор с доступными карточками работ,
+              Напиши ник и выбери звание, после чего откроется калькулятор с доступными карточками работ,
               лимитами и итоговым отчётом.
             </p>
           </div>
 
           <div class="form-grid">
             <div class="field">
-              <label for="nicknameInput">Nick_Name</label>
-              <input id="nicknameInput" class="input" type="text" placeholder="Например: Bullet1" maxlength="32" />
+              <label for="nicknameInput">Укажи свой Nick_Name</label>
+              <input id="nicknameInput" class="input" type="text" placeholder="Например: Temka_Bulletov" maxlength="32" />
             </div>
 
             <div class="field">
-              <label for="rankSelect">Звание</label>
+              <label for="rankSelect">Выбери звание</label>
               <select id="rankSelect" class="select"></select>
             </div>
 
             <button id="continueBtn" class="button">Продолжить</button>
-            <p class="helper-text">Весь сайт работает в одном файле, без сервера и без базы данных.</p>
+            <p class="helper-text">Сайт работает в тестовом режиме, возможны технические трудности.</p>
           </div>
         </div>
       </section>
@@ -926,16 +926,13 @@
     */
     const APP_CONFIG = {
       ranks: [
-        "Звание 1",
-        "Звание 2",
-        "Звание 3",
-        "Звание 4",
-        "Звание 5",
-        "Звание 6",
-        "Звание 7",
-        "Звание 8",
-        "Звание 9",
-        "Звание 10"
+        "Рядовой [1]",
+        "Ефрейтор [2]",
+        "Сержант [3]",
+        "Праворщик [4]",
+        "Лейтенант [5]",
+        "Капитан [6]",
+        "Майор [7]"
       ],
 
       categories: [
