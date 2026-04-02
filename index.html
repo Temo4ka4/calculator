@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Калькулятор баллов</title>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --bg-2: #121826;
+      --panel: rgba(19, 25, 39, 0.88);
+      --panel-2: rgba(255, 255, 255, 0.05);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f4f7fb;
+      --muted: #97a3b6;
+      --accent: #8ea4ff;
+      --accent-2: #6f86ff;
+      --danger: #ff7f88;
+      --success: #83d6a3;
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --max-width: 980px;
+      --bottom-space: 120px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(111, 134, 255, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(90, 188, 255, 0.08), transparent 24%),
+        linear-gradient(180deg, #0a0e16 0%, #0f1420 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 22px 22px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.75), rgba(0,0,0,0.18));
+      opacity: 0.35;
+    }
+
+    .app {
+      width: 100%;
+      min-height: 100vh;
+      padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
+      display: flex;
+      justify-content: center;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: var(--max-width);
+      position: relative;
+    }
+
+    .screen {
+      display: none;
+      animation: fadeUp 0.35s ease;
+      padding-bottom: var(--bottom-space);
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .hero,
+    .panel,
+    .category-card,
+    .task-card,
+    .summary-card,
+    .viewer-card,
+    .modal-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 22px;
+      border-radius: 30px;
+      min-height: calc(100vh - 40px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -90px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(142,164,255,0.25), transparent 68%);
+      pointer-events: none;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.07);
+      color: #cfd9ec;
+      font-size: 13px;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(28px, 5vw, 46px);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      max-width: 620px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 6px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field label {
+      color: #dbe4f5;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .input,
+    .select,
+    .button,
+    .counter-btn,
+    .ghost-button,
+    .bottom-button {
+      border: 0;
+      outline: none;
+      font: inherit;
+      transition: 0.2s ease;
+    }
+
+    .input,
+    .select {
+      width: 100%;
+      border-radius: 16px;
+      padding: 16px 16px;
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 15px;
+    }
+
+    .input::placeholder {
+      color: #7f8aa1;
+    }
+
+    .select option {
+      color: #fff;
+      background: #131a28;
+    }
+
+    .button,
+    .bottom-button {
+      cursor: pointer;
+      border-radius: 16px;
+      padding: 15px 18px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: #fff;
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      box-shadow: 0 10px 28px rgba(111, 134, 255, 0.26);
+    }
+
+    .button:hover,
+    .bottom-button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+
+    .button:active,
+    .bottom-button:active,
+    .ghost-button:active,
+    .counter-btn:active {
+      transform: scale(0.98);
+    }
+
+    .button.secondary,
+    .ghost-button {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: none;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 8px 0 12px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .topbar-left,
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 46px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .panel {
+      border-radius: 26px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .user-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .user-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .meta-label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .meta-main {
+      font-size: clamp(22px, 5vw, 30px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .rank-badge,
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #d7e1f3;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-head p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .categories-grid,
+    .tasks-grid,
+    .summary-list,
+    .viewer-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .categories-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .category-card,
+    .task-card,
+    .summary-card,
+    .viewer-card {
+      border-radius: 22px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .category-card {
+      cursor: pointer;
+      min-height: 132px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .category-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(142,164,255,0.25);
+    }
+
+    .category-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .category-sub {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .task-card {
+      display: grid;
+      gap: 16px;
+    }
+
+    .task-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .task-title-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .task-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .task-note {
+      color: #ccd7ea;
+      font-size: 14px;
+    }
+
+    .task-limit {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .task-points {
+      white-space: nowrap;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: rgba(142,164,255,0.12);
+      color: #dce5ff;
+      border: 1px solid rgba(142,164,255,0.16);
+    }
+
+    .counter-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .counter-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 8px;
+    }
+
+    .counter-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      cursor: pointer;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .counter-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.38;
+    }
+
+    .count-value {
+      min-width: 42px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .earned-box {
+      color: #d9e4f7;
+      font-size: 14px;
+    }
+
+    .earned-box strong {
+      font-size: 16px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px 18px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+      border-radius: 20px;
+      border: 1px dashed rgba(255,255,255,0.12);
+    }
+
+    .bottom-bar {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(calc(100% - 24px), 720px);
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      z-index: 50;
+      display: none;
+      animation: slideUp 0.25s ease;
+    }
+
+    .bottom-bar.active {
+      display: block;
+    }
+
+    .bottom-button {
+      width: 100%;
+      min-height: 58px;
+      border-radius: 18px;
+      font-size: 16px;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 12, 0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .overlay.active {
+      display: flex;
+      animation: fadeIn 0.22s ease;
+    }
+
+    .modal-card {
+      width: min(100%, 760px);
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      border-radius: 28px;
+      padding: 20px;
+      animation: fadeUp 0.3s ease;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .modal-sub {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .summary-list,
+    .viewer-list {
+      margin-top: 16px;
+    }
+
+    .summary-card,
+    .viewer-card {
+      display: grid;
+      gap: 8px;
+    }
+
+    .summary-top,
+    .viewer-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .summary-title,
+    .viewer-title {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .summary-cat,
+    .viewer-cat {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .summary-meta,
+    .viewer-meta {
+      color: #d6e0f2;
+      font-size: 14px;
+    }
+
+    .total-box {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(142,164,255,0.09);
+      border: 1px solid rgba(142,164,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .total-label {
+      color: #d8e2f7;
+      font-size: 14px;
+    }
+
+    .total-value {
+      font-size: clamp(24px, 5vw, 34px);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    .modal-actions,
+    .viewer-actions {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 18px;
+    }
+
+    .viewer-shell {
+      min-height: calc(100vh - 40px);
+      display: flex;
+      align-items: center;
+    }
+
+    .viewer-wrap {
+      width: 100%;
+      display: grid;
+      gap: 18px;
+    }
+
+    .viewer-mark {
+      color: #d6e2ff;
+      background: rgba(142,164,255,0.12);
+      border: 1px solid rgba(142,164,255,0.16);
+      border-radius: 999px;
+      width: fit-content;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    .toast {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 120;
+      min-width: 220px;
+      max-width: calc(100% - 32px);
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(12, 18, 29, 0.95);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #fff;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(-10px);
+      pointer-events: none;
+      transition: 0.25s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .helper-text {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translate(-50%, 14px);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .app {
+        padding-inline: 12px;
+      }
+
+      .hero {
+        min-height: calc(100vh - 24px);
+        padding: 18px;
+        border-radius: 24px;
+      }
+
+      .categories-grid,
+      .modal-actions,
+      .viewer-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: flex-start;
+      }
+
+      .task-head,
+      .summary-top,
+      .viewer-top {
+        flex-direction: column;
+      }
+
+      .counter-row {
+        align-items: stretch;
+      }
+
+      .counter-box {
+        justify-content: space-between;
+        width: 100%;
+      }
+
+      .earned-box {
+        width: 100%;
+      }
+
+      .modal-card {
+        padding: 16px;
+        border-radius: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="shell">
+      <section id="startScreen" class="screen active">
+        <div class="hero">
+          <div class="title-block">
+            <div class="eyebrow">RP • Калькулятор баллов</div>
+            <h1>Подсчёт работы без бардака</h1>
+            <p class="subtitle">
+              Выбери ник и звание, после чего откроется калькулятор с доступными карточками работ,
+              лимитами и итоговым отчётом.
+            </p>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="nicknameInput">Nick_Name</label>
+              <input id="nicknameInput" class="input" type="text" placeholder="Например: Bullet1" maxlength="32" />
+            </div>
+
+            <div class="field">
+              <label for="rankSelect">Звание</label>
+              <select id="rankSelect" class="select"></select>
+            </div>
+
+            <button id="continueBtn" class="button">Продолжить</button>
+            <p class="helper-text">Весь сайт работает в одном файле, без сервера и без базы данных.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="calculatorScreen" class="screen">
+        <div class="topbar">
+          <div class="topbar-left">
+            <button id="backToStartBtn" class="ghost-button">← Назад</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="user-box">
+            <div class="user-meta">
+              <div class="meta-label">Текущий сотрудник</div>
+              <div id="userNickname" class="meta-main">—</div>
+            </div>
+            <div id="userRankBadge" class="rank-badge">—</div>
+          </div>
+        </div>
+
+        <div class="section-head">
+          <div>
+            <h2>Категории работ</h2>
+            <p>Открывай нужную категорию и считай только доступные для выбранного звания карточки.</p>
+          </div>
+          <div id="selectedCountBadge" class="badge">Выбрано: 0</div>
+        </div>
+
+        <div id="categoriesGrid" class="categories-grid"></div>
+      </section>
+
+      <section id="categoryScreen" class="screen">
+        <div class="topbar">
+          <div class="topbar-left">
+            <button id="backToCalculatorBtn" class="ghost-button">← Назад</button>
+          </div>
+          <div class="topbar-right">
+            <div id="categoryRankBadge" class="rank-badge"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section-head" style="margin-bottom: 0;">
+            <div>
+              <h2 id="categoryTitle">Категория</h2>
+              <p id="categoryDescription">Список доступных работ</p>
+            </div>
+            <div id="categoryCountBadge" class="badge">Выбрано: 0</div>
+          </div>
+        </div>
+
+        <div id="tasksGrid" class="tasks-grid"></div>
+      </section>
+
+      <section id="viewerScreen" class="screen">
+        <div class="viewer-shell">
+          <div class="viewer-wrap">
+            <div class="panel">
+              <div class="viewer-mark">Режим просмотра отчёта</div>
+              <div class="title-block" style="margin-top: 14px;">
+                <h2>Чужой итоговый отчёт</h2>
+                <p class="subtitle" style="max-width: 100%;">
+                  Этот режим открыт по share-ссылке. Здесь можно только просматривать готовый отчёт.
+                </p>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="user-box">
+                <div class="user-meta">
+                  <div class="meta-label">Nick_Name</div>
+                  <div id="viewerNickname" class="meta-main">—</div>
+                </div>
+                <div id="viewerRankBadge" class="rank-badge">—</div>
+              </div>
+
+              <div id="viewerList" class="viewer-list"></div>
+
+              <div class="total-box">
+                <div>
+                  <div class="total-label">Общий итог</div>
+                  <div id="viewerTotal" class="total-value">0 баллов</div>
+                </div>
+              </div>
+
+              <div class="viewer-actions">
+                <button id="viewerOpenCalculatorBtn" class="button">Открыть калькулятор</button>
+                <button id="viewerCopyBtn" class="ghost-button">Скопировать отчёт</button>
+                <button id="viewerShareBtn" class="ghost-button">Поделиться</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="reportBar" class="bottom-bar">
+    <button id="openReportBtn" class="bottom-button">Итоговый отчёт</button>
+  </div>
+
+  <div id="reportModal" class="overlay">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2>Итоговый отчёт</h2>
+          <p class="modal-sub">Здесь собрана вся выбранная работа по категориям и общий итог баллов.</p>
+        </div>
+        <button id="closeReportBtn" class="ghost-button">Закрыть</button>
+      </div>
+
+      <div class="panel" style="padding: 16px; margin-bottom: 0;">
+        <div class="user-box">
+          <div class="user-meta">
+            <div class="meta-label">Nick_Name</div>
+            <div id="reportNickname" class="meta-main" style="font-size: 24px;">—</div>
+          </div>
+          <div id="reportRankBadge" class="rank-badge">—</div>
+        </div>
+      </div>
+
+      <div id="reportList" class="summary-list"></div>
+
+      <div class="total-box">
+        <div>
+          <div class="total-label">Общий итог баллов</div>
+          <div id="reportTotal" class="total-value">0 баллов</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="shareBtn" class="button">Поделиться</button>
+        <button id="copyBtn" class="ghost-button">Скопировать отчёт</button>
+        <button id="closeReportBottomBtn" class="ghost-button">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    /*
+      ==========================================================
+      ГЛАВНАЯ КОНФИГУРАЦИЯ
+      ==========================================================
+      Здесь ты потом будешь вручную менять:
+      - список званий
+      - категории
+      - карточки работ
+      - баллы
+      - тип единицы
+      - лимиты по званиям
+    */
+    const APP_CONFIG = {
+      ranks: [
+        "Звание 1",
+        "Звание 2",
+        "Звание 3",
+        "Звание 4",
+        "Звание 5",
+        "Звание 6",
+        "Звание 7",
+        "Звание 8",
+        "Звание 9",
+        "Звание 10"
+      ],
+
+      categories: [
+        {
+          id: "posts",
+          title: "Посты",
+          description: "Посты, КПП и другие стационарные точки."
+        },
+        {
+          id: "patrols",
+          title: "Патрули",
+          description: "Городские и районные патрули по маршрутам."
+        },
+        {
+          id: "checks",
+          title: "Проверки",
+          description: "Проверки состава, документов и территории."
+        },
+        {
+          id: "exams",
+          title: "Сдача экзаменов",
+          description: "Устав, экзамены, зачёты и проверка знаний."
+        }
+      ],
+
+      tasks: [
+        {
+          id: "post_kpp_1",
+          categoryId: "posts",
+          title: "Пост КПП-1",
+          points: 0.2,
+          unitLabel: "10 минут",
+          limits: {
+            "Звание 1": 6,
+            "Звание 2": 8,
+            "Звание 3": 10
+          }
+        },
+        {
+          id: "post_kpp_2",
+          categoryId: "posts",
+          title: "Пост КПП-2",
+          points: 0.2,
+          unitLabel: "10 минут",
+          limits: {
+            "Звание 1": 6,
+            "Звание 2": 8,
+            "Звание 3": 10,
+            "Звание 4": 10
+          }
+        },
+        {
+          id: "post_warehouse",
+          categoryId: "posts",
+          title: "Пост у склада",
+          points: 0.3,
+          unitLabel: "10 минут",
+          limits: {
+            "Звание 2": 4,
+            "Звание 3": 6,
+            "Звание 4": 8,
+            "Звание 5": 8
+          }
+        },
+        {
+          id: "patrol_city",
+          categoryId: "patrols",
+          title: "Патруль по городу",
+          points: 1,
+          unitLabel: "1 действие",
+          limits: {
+            "Звание 1": 2,
+            "Звание 2": 3,
+            "Звание 3": 4,
+            "Звание 4": 5
+          }
+        },
+        {
+          id: "patrol_highway",
+          categoryId: "patrols",
+          title: "Патруль по трассе",
+          points: 1.5,
+          unitLabel: "1 действие",
+          limits: {
+            "Звание 2": 2,
+            "Звание 3": 3,
+            "Звание 4": 4,
+            "Звание 5": 4
+          }
+        },
+        {
+          id: "patrol_pair",
+          categoryId: "patrols",
+          title: "Совместный патруль",
+          points: 2,
+          unitLabel: "1 действие",
+          limits: {
+            "Звание 3": 2,
+            "Звание 4": 3,
+            "Звание 5": 4,
+            "Звание 6": 4
+          }
+        },
+        {
+          id: "check_staff",
+          categoryId: "checks",
+          title: "Проверка личного состава",
+          points: 1,
+          unitLabel: "1 действие",
+          limits: {
+            "Звание 2": 1,
+            "Звание 3": 2,
+            "Звание 4": 2,
+            "Звание 5": 3
+          }
+        },
+        {
+          id: "check_barracks",
+          categoryId: "checks",
+          title: "Проверка казармы",
+          points: 0.8,
+          unitLabel: "1 действие",
+          limits: {
+            "Звание 2": 1,
+            "Звание 3": 2,
+            "Звание 4": 2,
+            "Звание 5": 2,
+            "Звание 6": 3
+          }
+        },
+        {
+          id: "check_docs",
+          categoryId: "checks",
+          title: "Проверка документов",
+          points: 0.5,
+          unitLabel: "1 действие",
+          limits: {
+            "Звание 1": 2,
+            "Звание 2": 3,
+            "Звание 3": 3,
+            "Звание 4": 4,
+            "Звание 5": 4
+          }
+        },
+        {
+          id: "exam_statute",
+          categoryId: "exams",
+          title: "Сдача устава",
+          points: 1,
+          unitLabel: "1 действие",
+          limits: {
+            "Звание 1": 1,
+            "Звание 2": 1,
+            "Звание 3": 1
+          }
+        },
+        {
+          id: "exam_lecture",
+          categoryId: "exams",
+          title: "Сдача лекции",
+          points: 1,
+          unitLabel: "1 действие",
+          limits: {
+            "Звание 1": 1,
+            "Звание 2": 1,
+            "Звание 3": 2,
+            "Звание 4": 2
+          }
+        },
+        {
+          id: "exam_fire",
+          categoryId: "exams",
+          title: "Сдача огневой подготовки",
+          points: 1.5,
+          unitLabel: "1 действие",
+          limits: {
+            "Звание 2": 1,
+            "Звание 3": 1,
+            "Звание 4": 2,
+            "Звание 5": 2
+          }
+        }
+      ]
+    };
+
+    // Состояние приложения
+    const state = {
+      nickname: "",
+      rank: "",
+      currentCategoryId: null,
+      counts: {},
+      viewReportData: null
+    };
+
+    // Элементы DOM
+    const els = {
+      startScreen: document.getElementById("startScreen"),
+      calculatorScreen: document.getElementById("calculatorScreen"),
+      categoryScreen: document.getElementById("categoryScreen"),
+      viewerScreen: document.getElementById("viewerScreen"),
+      nicknameInput: document.getElementById("nicknameInput"),
+      rankSelect: document.getElementById("rankSelect"),
+      continueBtn: document.getElementById("continueBtn"),
+      backToStartBtn: document.getElementById("backToStartBtn"),
+      backToCalculatorBtn: document.getElementById("backToCalculatorBtn"),
+      userNickname: document.getElementById("userNickname"),
+      userRankBadge: document.getElementById("userRankBadge"),
+      categoryRankBadge: document.getElementById("categoryRankBadge"),
+      categoriesGrid: document.getElementById("categoriesGrid"),
+      selectedCountBadge: document.getElementById("selectedCountBadge"),
+      categoryTitle: document.getElementById("categoryTitle"),
+      categoryDescription: document.getElementById("categoryDescription"),
+      categoryCountBadge: document.getElementById("categoryCountBadge"),
+      tasksGrid: document.getElementById("tasksGrid"),
+      reportBar: document.getElementById("reportBar"),
+      openReportBtn: document.getElementById("openReportBtn"),
+      reportModal: document.getElementById("reportModal"),
+      closeReportBtn: document.getElementById("closeReportBtn"),
+      closeReportBottomBtn: document.getElementById("closeReportBottomBtn"),
+      reportNickname: document.getElementById("reportNickname"),
+      reportRankBadge: document.getElementById("reportRankBadge"),
+      reportList: document.getElementById("reportList"),
+      reportTotal: document.getElementById("reportTotal"),
+      copyBtn: document.getElementById("copyBtn"),
+      shareBtn: document.getElementById("shareBtn"),
+      viewerNickname: document.getElementById("viewerNickname"),
+      viewerRankBadge: document.getElementById("viewerRankBadge"),
+      viewerList: document.getElementById("viewerList"),
+      viewerTotal: document.getElementById("viewerTotal"),
+      viewerOpenCalculatorBtn: document.getElementById("viewerOpenCalculatorBtn"),
+      viewerCopyBtn: document.getElementById("viewerCopyBtn"),
+      viewerShareBtn: document.getElementById("viewerShareBtn"),
+      toast: document.getElementById("toast")
+    };
+
+    function init() {
+      populateRankSelect();
+      bindEvents();
+      handleSharedReportOnLoad();
+    }
+
+    function populateRankSelect() {
+      els.rankSelect.innerHTML = "";
+      APP_CONFIG.ranks.forEach((rank, index) => {
+        const option = document.createElement("option");
+        option.value = rank;
+        option.textContent = rank;
+        if (index === 0) option.selected = true;
+        els.rankSelect.appendChild(option);
+      });
+    }
+
+    function bindEvents() {
+      els.continueBtn.addEventListener("click", handleContinue);
+      els.backToStartBtn.addEventListener("click", goToStartScreen);
+      els.backToCalculatorBtn.addEventListener("click", () => {
+        state.currentCategoryId = null;
+        showScreen("calculator");
+      });
+
+      els.openReportBtn.addEventListener("click", openReportModal);
+      els.closeReportBtn.addEventListener("click", closeReportModal);
+      els.closeReportBottomBtn.addEventListener("click", closeReportModal);
+      els.copyBtn.addEventListener("click", copyCurrentReport);
+      els.shareBtn.addEventListener("click", shareCurrentReport);
+      els.viewerCopyBtn.addEventListener("click", copyViewerReport);
+      els.viewerShareBtn.addEventListener("click", shareViewerReport);
+      els.viewerOpenCalculatorBtn.addEventListener("click", openCalculatorFromViewer);
+
+      els.reportModal.addEventListener("click", (e) => {
+        if (e.target === els.reportModal) closeReportModal();
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeReportModal();
+      });
+    }
+
+    function handleContinue() {
+      const nickname = els.nicknameInput.value.trim();
+      const rank = els.rankSelect.value;
+
+      if (!nickname) {
+        showToast("Сначала введи Nick_Name.");
+        els.nicknameInput.focus();
+        return;
+      }
+
+      state.nickname = nickname;
+      state.rank = rank;
+      state.currentCategoryId = null;
+      state.counts = {};
+
+      renderCalculatorHeader();
+      renderCategories();
+      updateSelectedBadge();
+      updateBottomReportButton();
+      showScreen("calculator");
+      closeReportModal();
+    }
+
+    function goToStartScreen() {
+      state.currentCategoryId = null;
+      closeReportModal();
+      showScreen("start");
+    }
+
+    function renderCalculatorHeader() {
+      els.userNickname.textContent = state.nickname || "—";
+      els.userRankBadge.textContent = state.rank || "—";
+      els.categoryRankBadge.textContent = state.rank || "—";
+    }
+
+    function renderCategories() {
+      const html = APP_CONFIG.categories.map((category) => {
+        const availableTasks = getTasksForCategoryAndRank(category.id, state.rank);
+        const selectedInCategory = availableTasks.reduce((sum, task) => sum + (state.counts[task.id] || 0), 0);
+
+        return `
+          <button class="category-card" data-category-id="${category.id}">
+            <div>
+              <div class="category-title">${escapeHtml(category.title)}</div>
+              <div class="category-sub">${escapeHtml(category.description)}</div>
+            </div>
+            <div class="badge">Доступно карточек: ${availableTasks.length} • Выбрано: ${selectedInCategory}</div>
+          </button>
+        `;
+      }).join("");
+
+      els.categoriesGrid.innerHTML = html;
+
+      els.categoriesGrid.querySelectorAll("[data-category-id]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const categoryId = button.dataset.categoryId;
+          openCategory(categoryId);
+        });
+      });
+    }
+
+    function openCategory(categoryId) {
+      state.currentCategoryId = categoryId;
+      const category = APP_CONFIG.categories.find((item) => item.id === categoryId);
+      const tasks = getTasksForCategoryAndRank(categoryId, state.rank);
+      const selectedCount = tasks.reduce((sum, task) => sum + (state.counts[task.id] || 0), 0);
+
+      els.categoryTitle.textContent = category?.title || "Категория";
+      els.categoryDescription.textContent = category?.description || "";
+      els.categoryCountBadge.textContent = `Выбрано: ${selectedCount}`;
+
+      if (!tasks.length) {
+        els.tasksGrid.innerHTML = `
+          <div class="empty-state">
+            Для звания <strong>${escapeHtml(state.rank)}</strong> в этой категории пока нет доступных карточек.
+          </div>
+        `;
+      } else {
+        els.tasksGrid.innerHTML = tasks.map((task) => renderTaskCard(task)).join("");
+        bindTaskCardEvents(tasks);
+      }
+
+      showScreen("category");
+    }
+
+    function renderTaskCard(task) {
+      const count = state.counts[task.id] || 0;
+      const limit = getTaskLimit(task, state.rank);
+      const earned = roundPoints(count * task.points);
+
+      return `
+        <div class="task-card" data-task-id="${task.id}">
+          <div class="task-head">
+            <div class="task-title-box">
+              <div class="task-title">${escapeHtml(task.title)}</div>
+              <div class="task-note">${formatPoints(task.points)} / ${escapeHtml(task.unitLabel)}</div>
+              <div class="task-limit">Лимит для звания: ${limit}</div>
+            </div>
+            <div class="task-points">${formatPoints(task.points)}</div>
+          </div>
+
+          <div class="counter-row">
+            <div class="counter-box">
+              <button class="counter-btn minus-btn" data-task-id="${task.id}" ${count <= 0 ? "disabled" : ""}>−</button>
+              <div class="count-value" id="count-${task.id}">${count}</div>
+              <button class="counter-btn plus-btn" data-task-id="${task.id}" ${count >= limit ? "disabled" : ""}>+</button>
+            </div>
+
+            <div class="earned-box">
+              Начислено: <strong id="earned-${task.id}">${formatPoints(earned)}</strong>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function bindTaskCardEvents(tasks) {
+      els.tasksGrid.querySelectorAll(".minus-btn").forEach((btn) => {
+        btn.addEventListener("click", () => updateTaskCount(btn.dataset.taskId, -1));
+      });
+
+      els.tasksGrid.querySelectorAll(".plus-btn").forEach((btn) => {
+        btn.addEventListener("click", () => updateTaskCount(btn.dataset.taskId, 1));
+      });
+    }
+
+    function updateTaskCount(taskId, delta) {
+      const task = APP_CONFIG.tasks.find((item) => item.id === taskId);
+      if (!task) return;
+
+      const current = state.counts[taskId] || 0;
+      const limit = getTaskLimit(task, state.rank);
+      let next = current + delta;
+
+      if (next < 0) next = 0;
+      if (next > limit) next = limit;
+
+      if (next === current) return;
+
+      state.counts[taskId] = next;
+
+      const countEl = document.getElementById(`count-${taskId}`);
+      const earnedEl = document.getElementById(`earned-${taskId}`);
+      if (countEl) countEl.textContent = String(next);
+      if (earnedEl) earnedEl.textContent = formatPoints(roundPoints(next * task.points));
+
+      const card = els.tasksGrid.querySelector(`[data-task-id="${taskId}"]`);
+      if (card) {
+        const minusBtn = card.querySelector(".minus-btn");
+        const plusBtn = card.querySelector(".plus-btn");
+        if (minusBtn) minusBtn.disabled = next <= 0;
+        if (plusBtn) plusBtn.disabled = next >= limit;
+      }
+
+      updateSelectedBadge();
+      updateCategorySelectedBadge();
+      renderCategories();
+      updateBottomReportButton();
+    }
+
+    function updateSelectedBadge() {
+      els.selectedCountBadge.textContent = `Выбрано: ${getTotalActionsCount()}`;
+    }
+
+    function updateCategorySelectedBadge() {
+      if (!state.currentCategoryId) return;
+      const tasks = getTasksForCategoryAndRank(state.currentCategoryId, state.rank);
+      const selectedCount = tasks.reduce((sum, task) => sum + (state.counts[task.id] || 0), 0);
+      els.categoryCountBadge.textContent = `Выбрано: ${selectedCount}`;
+    }
+
+    function updateBottomReportButton() {
+      const hasSelected = getSelectedTasks().length > 0;
+      els.reportBar.classList.toggle("active", hasSelected && els.viewerScreen.classList.contains("active") === false);
+    }
+
+    function openReportModal() {
+      const reportData = buildCurrentReportData();
+      if (!reportData.items.length) {
+        showToast("Сначала добавь хотя бы одну работу.");
+        return;
+      }
+
+      els.reportNickname.textContent = reportData.nickname;
+      els.reportRankBadge.textContent = reportData.rank;
+      els.reportList.innerHTML = reportData.items.map((item) => `
+        <div class="summary-card">
+          <div class="summary-top">
+            <div>
+              <div class="summary-title">${escapeHtml(item.title)}</div>
+              <div class="summary-cat">${escapeHtml(item.categoryTitle)}</div>
+            </div>
+            <div class="badge">${formatPoints(item.pointsTotal)}</div>
+          </div>
+          <div class="summary-meta">Количество: x${item.count}</div>
+        </div>
+      `).join("");
+      els.reportTotal.textContent = formatPoints(reportData.totalPoints);
+      els.reportModal.classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeReportModal() {
+      els.reportModal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+
+    function buildCurrentReportData() {
+      const items = getSelectedTasks().map((entry) => {
+        const category = APP_CONFIG.categories.find((cat) => cat.id === entry.task.categoryId);
+        return {
+          categoryId: entry.task.categoryId,
+          categoryTitle: category?.title || "Без категории",
+          taskId: entry.task.id,
+          title: entry.task.title,
+          count: entry.count,
+          pointsEach: entry.task.points,
+          pointsTotal: roundPoints(entry.count * entry.task.points)
+        };
+      });
+
+      return {
+        nickname: state.nickname,
+        rank: state.rank,
+        items,
+        totalPoints: roundPoints(items.reduce((sum, item) => sum + item.pointsTotal, 0))
+      };
+    }
+
+    function buildReportText(reportData) {
+      const lines = [
+        `Nick_Name: ${reportData.nickname}`,
+        `Звание: ${reportData.rank}`,
+        `Проделанная работа:`
+      ];
+
+      reportData.items.forEach((item) => {
+        lines.push(`- ${item.title} — x${item.count} — ${formatPoints(item.pointsTotal)}`);
+      });
+
+      lines.push(`Итого: ${formatPoints(reportData.totalPoints)}`);
+      return lines.join("\n");
+    }
+
+    async function copyCurrentReport() {
+      const reportData = buildCurrentReportData();
+      if (!reportData.items.length) {
+        showToast("Копировать пока нечего.");
+        return;
+      }
+
+      await copyText(buildReportText(reportData), "Отчёт скопирован.");
+    }
+
+    async function copyViewerReport() {
+      if (!state.viewReportData) return;
+      await copyText(buildReportText(state.viewReportData), "Отчёт скопирован.");
+    }
+
+    async function shareCurrentReport() {
+      const reportData = buildCurrentReportData();
+      if (!reportData.items.length) {
+        showToast("Нечего отправлять. Сначала добавь работу.");
+        return;
+      }
+
+      const shareUrl = generateShareUrl(reportData);
+      await shareOrCopyUrl(shareUrl);
+    }
+
+    async function shareViewerReport() {
+      if (!state.viewReportData) return;
+      const shareUrl = generateShareUrl(state.viewReportData);
+      await shareOrCopyUrl(shareUrl);
+    }
+
+    async function shareOrCopyUrl(url) {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "Итоговый отчёт",
+            text: "Смотри итоговый отчёт по работе.",
+            url
+          });
+          showToast("Ссылка готова к отправке.");
+          return;
+        } catch (error) {
+        }
+      }
+
+      await copyText(url, "Share-ссылка скопирована.");
+    }
+
+    function generateShareUrl(reportData) {
+      const compactData = {
+        nickname: reportData.nickname,
+        rank: reportData.rank,
+        items: reportData.items.map((item) => ({
+          categoryTitle: item.categoryTitle,
+          title: item.title,
+          count: item.count,
+          pointsTotal: item.pointsTotal
+        })),
+        totalPoints: reportData.totalPoints
+      };
+
+      const json = JSON.stringify(compactData);
+      const encoded = encodeBase64Unicode(json);
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.hash = "";
+      url.searchParams.set("report", encoded);
+      return url.toString();
+    }
+
+    function handleSharedReportOnLoad() {
+      const params = new URLSearchParams(window.location.search);
+      const encodedReport = params.get("report");
+
+      if (!encodedReport) {
+        showScreen("start");
+        return;
+      }
+
+      try {
+        const decodedJson = decodeBase64Unicode(encodedReport);
+        const reportData = JSON.parse(decodedJson);
+
+        if (!reportData || !reportData.nickname || !reportData.rank || !Array.isArray(reportData.items)) {
+          throw new Error("Invalid report data");
+        }
+
+        state.viewReportData = reportData;
+        renderViewerReport(reportData);
+        showScreen("viewer");
+      } catch (error) {
+        console.error(error);
+        showToast("Ссылка отчёта повреждена. Открыт обычный режим.");
+        clearReportParamFromUrl();
+        showScreen("start");
+      }
+    }
+
+    function renderViewerReport(reportData) {
+      els.viewerNickname.textContent = reportData.nickname;
+      els.viewerRankBadge.textContent = reportData.rank;
+
+      if (!reportData.items.length) {
+        els.viewerList.innerHTML = `<div class="empty-state">В этом отчёте нет выбранных работ.</div>`;
+      } else {
+        els.viewerList.innerHTML = reportData.items.map((item) => `
+          <div class="viewer-card">
+            <div class="viewer-top">
+              <div>
+                <div class="viewer-title">${escapeHtml(item.title)}</div>
+                <div class="viewer-cat">${escapeHtml(item.categoryTitle)}</div>
+              </div>
+              <div class="badge">${formatPoints(item.pointsTotal)}</div>
+            </div>
+            <div class="viewer-meta">Количество: x${item.count}</div>
+          </div>
+        `).join("");
+      }
+
+      els.viewerTotal.textContent = formatPoints(reportData.totalPoints || 0);
+      els.reportBar.classList.remove("active");
+    }
+
+    function openCalculatorFromViewer() {
+      clearReportParamFromUrl();
+      state.viewReportData = null;
+      showScreen("start");
+    }
+
+    function clearReportParamFromUrl() {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("report");
+      history.replaceState({}, "", url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : "") + url.hash);
+    }
+
+    function showScreen(screenName) {
+      const screenMap = {
+        start: els.startScreen,
+        calculator: els.calculatorScreen,
+        category: els.categoryScreen,
+        viewer: els.viewerScreen
+      };
+
+      Object.values(screenMap).forEach((screen) => screen.classList.remove("active"));
+      screenMap[screenName].classList.add("active");
+
+      const showBottomBar = (screenName === "calculator" || screenName === "category") && getSelectedTasks().length > 0;
+      els.reportBar.classList.toggle("active", showBottomBar);
+      closeReportModal();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function getTasksForCategoryAndRank(categoryId, rank) {
+      return APP_CONFIG.tasks.filter((task) => {
+        return task.categoryId === categoryId && Object.prototype.hasOwnProperty.call(task.limits, rank);
+      });
+    }
+
+    function getTaskLimit(task, rank) {
+      return Number(task.limits?.[rank] || 0);
+    }
+
+    function getSelectedTasks() {
+      return APP_CONFIG.tasks
+        .map((task) => ({ task, count: state.counts[task.id] || 0 }))
+        .filter((entry) => entry.count > 0);
+    }
+
+    function getTotalActionsCount() {
+      return getSelectedTasks().reduce((sum, entry) => sum + entry.count, 0);
+    }
+
+    function roundPoints(value) {
+      return Math.round((value + Number.EPSILON) * 100) / 100;
+    }
+
+    function formatPoints(value) {
+      const num = roundPoints(Number(value) || 0);
+      const formatted = Number.isInteger(num) ? String(num) : num.toFixed(2).replace(/\.0+$/, "").replace(/(\.[1-9]*)0+$/, "$1");
+      return `${formatted} ${num === 1 ? "балл" : "балла"}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function encodeBase64Unicode(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = "";
+      bytes.forEach((byte) => binary += String.fromCharCode(byte));
+      return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    }
+
+    function decodeBase64Unicode(base64) {
+      const normalized = base64.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
+      const binary = atob(padded);
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    }
+
+    async function copyText(text, successMessage) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          fallbackCopy(text);
+        }
+        showToast(successMessage);
+      } catch (error) {
+        console.error(error);
+        try {
+          fallbackCopy(text);
+          showToast(successMessage);
+        } catch (fallbackError) {
+          console.error(fallbackError);
+          showToast("Не удалось скопировать автоматически.");
+        }
+      }
+    }
+
+    function fallbackCopy(text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+
+    let toastTimer = null;
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        els.toast.classList.remove("show");
+      }, 2400);
+    }
+
+    init();
+  </script>
+</body>
+  </html>
